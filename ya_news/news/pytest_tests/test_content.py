@@ -1,0 +1,84 @@
+from datetime import timedelta
+
+import pytest
+from django.conf import settings
+from django.urls import reverse
+from django.utils import timezone
+
+from news.forms import CommentForm
+from news.models import Comment, News
+
+
+@pytest.fixture
+@pytest.mark.django_db
+def bulk_news():
+    today = timezone.now().date()
+    return News.objects.bulk_create([
+        News(
+            title=f'Новость {index}',
+            text='Просто текст.',
+            date=today - timedelta(days=index)
+        ) for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
+    ])
+
+
+@pytest.fixture
+@pytest.mark.django_db
+def news_with_comments(author):
+    news_item = News.objects.create(title='Тестовая новость', text='Просто текст.')
+    now = timezone.now()
+    for index in range(10):
+        comment = Comment.objects.create(
+            news=news_item,
+            author=author,
+            text=f'Tекст {index}'
+        )
+        comment.created = now + timedelta(minutes=index)
+        comment.save()
+    return news_item
+
+
+@pytest.fixture
+@pytest.mark.django_db
+def setup_data(author, bulk_news, news_with_comments):
+    return {
+        'news': bulk_news,
+        'news_item': news_with_comments,
+        'author': author,
+        'detail_url': reverse('news:detail', args=(news_with_comments.id,))
+    }
+
+
+@pytest.mark.django_db
+def test_news_count(client, setup_data):
+    response = client.get(reverse('news:home'))
+    object_list = response.context['object_list']
+    assert len(object_list) == settings.NEWS_COUNT_ON_HOME_PAGE
+
+
+@pytest.mark.django_db
+def test_news_order(client, setup_data):
+    response = client.get(reverse('news:home'))
+    dates = [news.date for news in response.context['object_list']]
+    assert dates == sorted(dates, reverse=True)
+
+
+@pytest.mark.django_db
+def test_comments_order(setup_data):
+    comments = setup_data['news_item'].comment_set.order_by('created')
+    timestamps = [comment.created for comment in comments]
+    assert timestamps == sorted(timestamps)
+
+
+@pytest.mark.django_db
+def test_anonymous_client_has_no_form(client, setup_data):
+    response = client.get(setup_data['detail_url'])
+    assert 'form' not in response.context
+
+
+@pytest.mark.django_db
+def test_authorized_client_has_form(client, setup_data):
+    client.force_login(setup_data['author'])
+    response = client.get(setup_data['detail_url'])
+    assert 'form' in response.context
+    assert isinstance(response.context['form'], CommentForm)
