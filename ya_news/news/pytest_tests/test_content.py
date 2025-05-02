@@ -25,7 +25,10 @@ def bulk_news():
 @pytest.fixture
 @pytest.mark.django_db
 def news_with_comments(author):
-    news_item = News.objects.create(title='Тестовая новость', text='Просто текст.')
+    news_item = News.objects.create(
+        title='Тестовая новость',
+        text='Просто текст.'
+    )
     now = timezone.now()
     for index in range(10):
         comment = Comment.objects.create(

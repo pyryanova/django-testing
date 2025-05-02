@@ -81,7 +81,12 @@ def test_author_can_delete_comment(client, author, comment, comment_urls):
 
 
 @pytest.mark.django_db
-def test_user_cant_delete_comment_of_another_user(client, reader, comment, comment_urls):
+def test_user_cant_delete_comment_of_another_user(
+    client,
+    reader,
+    comment,
+    comment_urls
+):
     client.force_login(reader)
     response = client.delete(comment_urls['delete'])
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -99,9 +104,17 @@ def test_author_can_edit_comment(client, author, comment, comment_urls):
 
 
 @pytest.mark.django_db
-def test_user_cant_edit_comment_of_another_user(client, reader, comment, comment_urls):
+def test_user_cant_edit_comment_of_another_user(
+    client,
+    reader,
+    comment,
+    comment_urls
+):
     client.force_login(reader)
-    response = client.post(comment_urls['edit'], data={'text': 'Попытка изменить'})
+    response = client.post(
+        comment_urls['edit'],
+        data={'text': 'Попытка изменить'}
+    )
     assert response.status_code == HTTPStatus.NOT_FOUND
     comment.refresh_from_db()
     assert comment.text == 'Комментарий'

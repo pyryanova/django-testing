@@ -66,7 +66,10 @@ class TestNoteAccessLogic(TestCase):
 
     def test_anonymous_cant_create_note(self):
         url = reverse('notes:add')
-        response = self.client.post(url, data={'title': 'Новая заметка', 'text': 'Текст'})
+        response = self.client.post(
+            url,
+            data={'title': 'Новая заметка', 'text': 'Текст'}
+        )
         login_url = reverse('users:login')
         redirect_url = f'{login_url}?next={url}'
         self.assertRedirects(response, redirect_url)

@@ -1,5 +1,6 @@
 import pytest
 from http import HTTPStatus
+
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 
@@ -39,7 +40,6 @@ def comment_urls(comment):
 
 @pytest.mark.django_db
 def test_pages_available_for_anonymous_user(client, news):
-    """Анонимный пользователь видит главную, новость, логин, регистрацию, logout редиректит."""
     url_names = [
         ('news:home', None, HTTPStatus.OK),
         ('news:detail', (news.id,), HTTPStatus.OK),
@@ -55,8 +55,10 @@ def test_pages_available_for_anonymous_user(client, news):
 
 @pytest.mark.django_db
 def test_comment_edit_and_delete_access(client, author, reader, comment):
-    """Только автор комментария может редактировать и удалять его."""
-    for user, expected_status in [(author, HTTPStatus.OK), (reader, HTTPStatus.NOT_FOUND)]:
+    for user, expected_status in [
+        (author, HTTPStatus.OK),
+        (reader, HTTPStatus.NOT_FOUND)
+    ]:
         client.force_login(user)
         for action in ('news:edit', 'news:delete'):
             url = reverse(action, args=(comment.id,))
@@ -66,7 +68,6 @@ def test_comment_edit_and_delete_access(client, author, reader, comment):
 
 @pytest.mark.django_db
 def test_anonymous_redirect_to_login(client, comment):
-    """Анонимный пользователь перенаправляется на логин при попытке редактирования или удаления."""
     login_url = reverse('users:login')
     for action in ('news:edit', 'news:delete'):
         url = reverse(action, args=(comment.id,))
