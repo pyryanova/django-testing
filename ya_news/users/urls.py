@@ -1,8 +1,8 @@
-# users/urls.py
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from .views import register, user_logout
+
 
 app_name = 'users'
 

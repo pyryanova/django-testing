@@ -27,7 +27,6 @@ def news():
 
 @pytest.fixture
 @pytest.mark.django_db
-
 def comment(news, author):
     return Comment.objects.create(news=news, author=author, text='Комментарий')
 
@@ -45,7 +44,7 @@ def comment_urls(comment):
 @pytest.mark.django_db
 def test_anonymous_user_cant_create_comment(client, news):
     url = reverse('news:detail', args=(news.id,))
-    response = client.post(url, data={'text': 'Анонимный комментарий'})
+    client.post(url, data={'text': 'Анонимный комментарий'})
     assert Comment.objects.count() == 0
 
 
