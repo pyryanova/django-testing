@@ -1,12 +1,14 @@
-from pytils.translit import slugify
-
 from http import HTTPStatus
-from django.contrib.auth import get_user_model
+
 from django.db import IntegrityError
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.contrib.auth import get_user_model
+
+from pytils.translit import slugify
 
 from notes.models import Note
+
 
 User = get_user_model()
 
@@ -55,14 +57,34 @@ class TestNoteAccessLogic(TestCase):
         self.assertEqual(self.note.text, self.NOTE_TEXT)
 
     def test_author_can_delete_note(self):
+        notes_before = Note.objects.count()
         response = self.author_client.post(self.delete_url)
+        notes_after = Note.objects.count()
         self.assertRedirects(response, self.success_url)
+        self.assertEqual(notes_after, notes_before - 1)
         self.assertFalse(Note.objects.filter(pk=self.note.pk).exists())
 
     def test_reader_cant_delete_note(self):
+        notes_before = Note.objects.count()
         response = self.reader_client.post(self.delete_url)
+        notes_after = Note.objects.count()
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.assertEqual(notes_after, notes_before)
         self.assertTrue(Note.objects.filter(pk=self.note.pk).exists())
+
+    def test_author_can_create_note(self):
+        url = reverse('notes:add')
+        notes_before = Note.objects.count()
+        data = {
+            'title': 'Созданная заметка',
+            'text': 'Текст созданной заметки',
+            'slug': 'created-note'
+        }
+        response = self.author_client.post(url, data=data)
+        notes_after = Note.objects.count()
+        self.assertRedirects(response, self.success_url)
+        self.assertEqual(notes_after, notes_before + 1)
+        self.assertTrue(Note.objects.filter(slug='created-note').exists())
 
     def test_anonymous_cant_create_note(self):
         url = reverse('notes:add')

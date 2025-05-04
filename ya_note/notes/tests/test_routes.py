@@ -21,47 +21,45 @@ class TestRoutes(TestCase):
             slug='test-note',
             author=cls.author
         )
+        cls.routes_statuses = [
+            ('notes:home', None, HTTPStatus.OK, cls.author, 'get'),
+            ('notes:success', None, HTTPStatus.OK, cls.author, 'get'),
+            ('users:login', None, HTTPStatus.OK, None, 'get'),
+            ('users:signup', None, HTTPStatus.OK, None, 'get'),
+            ('notes:edit', (cls.note.slug,), HTTPStatus.OK, cls.author, 'get'),
+            ('notes:delete', (cls.note.slug,), HTTPStatus.OK,
+             cls.author, 'get'),
+            ('notes:edit', (cls.note.slug,), HTTPStatus.NOT_FOUND,
+             cls.reader, 'get'),
+            ('notes:delete', (cls.note.slug,), HTTPStatus.NOT_FOUND,
+             cls.reader, 'get'),
+            ('users:logout', None, HTTPStatus.OK, cls.author, 'post',
+             'registration/logout.html'),
+        ]
+        cls.protected_routes = [
+            ('notes:edit', (cls.note.slug,)),
+            ('notes:delete', (cls.note.slug,)),
+        ]
 
-    def test_pages_availability(self):
-        urls = (
-            ('notes:home', None),
-            ('notes:success', None),
-            ('users:login', None),
-            ('users:signup', None),
-        )
-        for name, args in urls:
-            with self.subTest(name=name):
-                url = reverse(name, args=args)
-                if name == 'notes:success':
-                    self.client.force_login(self.author)
-                response = self.client.get(url)
-                self.assertEqual(response.status_code, HTTPStatus.OK)
+    def test_statuses_for_routes(self):
+        for name, args, status, user, method, *rest in self.routes_statuses:
+            if user:
+                self.client.force_login(user)
+            url = reverse(name, args=args)
+            with self.subTest(url=url, method=method):
+                response = getattr(self.client, method)(url)
+                self.assertEqual(response.status_code, status)
+                if rest:
+                    template = rest[0]
+                    self.assertTemplateUsed(response, template)
+                if user:
+                    self.client.logout()
 
-    def test_availability_for_note_edit_and_delete(self):
-        users_statuses = (
-            (self.author, HTTPStatus.OK),
-            (self.reader, HTTPStatus.NOT_FOUND),
-        )
-        for user, status in users_statuses:
-            self.client.force_login(user)
-            for name in ('notes:edit', 'notes:delete'):
-                with self.subTest(user=user.username, name=name):
-                    url = reverse(name, args=(self.note.slug,))
-                    response = self.client.get(url)
-                    self.assertEqual(response.status_code, status)
-
-    def test_redirect_for_anonymous_client(self):
+    def test_redirects_for_anonymous_client(self):
         login_url = reverse('users:login')
-        for name in ('notes:edit', 'notes:delete'):
-            with self.subTest(name=name):
-                url = reverse(name, args=(self.note.slug,))
-                redirect_url = f'{login_url}?next={url}'
+        for name, args in self.protected_routes:
+            url = reverse(name, args=args)
+            expected_redirect = f'{login_url}?next={url}'
+            with self.subTest(url=url):
                 response = self.client.get(url)
-                self.assertRedirects(response, redirect_url)
-
-    def test_logout(self):
-        self.client.force_login(self.author)
-        url = reverse('users:logout')
-        response = self.client.post(url)
-        self.assertTemplateUsed(response, 'registration/logout.html')
-        self.assertNotIn('_auth_user_id', self.client.session)
+                self.assertRedirects(response, expected_redirect)
