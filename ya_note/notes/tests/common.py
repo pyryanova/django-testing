@@ -25,14 +25,15 @@ class NotesTestBase(TestCase):
         cls.author_client.force_login(cls.author)
         cls.reader_client.force_login(cls.reader)
 
-        cls.notes = Note.objects.bulk_create([
-            Note(
+        cls.notes = []
+        for i in range(6):
+            note = Note.objects.create(
                 title=f'Заметка {i}',
                 text='Текст',
                 slug=f'note-{i}',
                 author=cls.author
-            ) for i in range(6)
-        ])
+            )
+            cls.notes.append(note)
 
         cls.note = cls.notes[0]
         cls.detail_url = reverse('notes:detail', args=(cls.note.slug,))
