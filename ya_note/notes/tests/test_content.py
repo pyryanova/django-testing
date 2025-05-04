@@ -25,7 +25,7 @@ class TestNotesListPage(NotesTestBase):
 
 class TestNoteDetailPage(NotesTestBase):
     def test_note_detail_page(self):
-        response = self.author_client.get(self.DETAIL_URL)
+        response = self.author_client.get(self.detail_url)
         self.assertEqual(response.context['note'].pk, self.note.pk)
 
 
