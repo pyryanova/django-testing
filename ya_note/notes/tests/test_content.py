@@ -22,11 +22,10 @@ class TestNotesListPage(NotesTestBase):
             all(note.author == self.reader for note in object_list)
         )
 
-
-def test_note_detail_page(self):
-    self.author_client.force_login(self.author)
-    response = self.author_client.get(self.DETAIL_URL)
-    self.assertEqual(response.context['note'].pk, self.note.pk)
+    def test_note_detail_page(self):
+        self.author_client.force_login(self.author)
+        response = self.author_client.get(self.DETAIL_URL)
+        self.assertEqual(response.context['note'].pk, self.note.pk)
 
 
 class TestNoteCreatePage(NotesTestBase):
