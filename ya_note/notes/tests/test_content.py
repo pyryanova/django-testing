@@ -1,12 +1,12 @@
 from notes.forms import NoteForm
-from .common import NotesTestBase
+from .common import NotesTestBase, NOTES_COUNT
 
 
 class TestNotesListPage(NotesTestBase):
     def test_notes_are_displayed(self):
         response = self.author_client.get(self.list_url)
         object_list = response.context['object_list']
-        self.assertEqual(len(object_list), 6)
+        self.assertEqual(len(object_list), NOTES_COUNT)
 
     def test_only_author_notes_are_displayed(self):
         response = self.author_client.get(self.list_url)

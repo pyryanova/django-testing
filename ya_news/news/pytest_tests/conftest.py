@@ -1,7 +1,12 @@
+from datetime import timedelta
+
 import pytest
-from django.urls import reverse
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import Client
+from django.urls import reverse
+from django.utils import timezone
 
 from news.models import Comment, News
 
@@ -80,3 +85,38 @@ def user_urls():
         'signup': reverse('users:signup'),
         'logout': reverse('users:logout')
     }
+
+
+@pytest.fixture
+def bulk_news():
+    today = timezone.now().date()
+    return News.objects.bulk_create([
+        News(
+            title=f'Новость {index}',
+            text='Просто текст.',
+            date=today - timedelta(days=index)
+        ) for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
+    ])
+
+
+@pytest.fixture
+def news_with_comments(author):
+    news_item = News.objects.create(
+        title='Тестовая новость',
+        text='Просто текст.'
+    )
+    now = timezone.now()
+    for index in range(10):
+        comment = Comment.objects.create(
+            news=news_item,
+            author=author,
+            text=f'Tекст {index}'
+        )
+        comment.created = now + timedelta(minutes=index)
+        comment.save()
+    return news_item
+
+
+@pytest.fixture
+def detail_url(news_with_comments):
+    return reverse('news:detail', args=(news_with_comments.id,))

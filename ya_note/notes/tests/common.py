@@ -14,6 +14,14 @@ LOGIN_URL = reverse('users:login')
 LOGOUT_URL = reverse('users:logout')
 SIGNUP_URL = reverse('users:signup')
 
+NOTES_COUNT = 6
+NOTE_TEXT = 'Текст заметки'
+NEW_NOTE_TEXT = 'Обновлённый текст'
+CREATED_NOTE_SLUG = 'created-note'
+CREATED_NOTE_TITLE = 'Созданная заметка'
+ANON_NOTE_TITLE = 'Новая заметка'
+ANON_NOTE_TEXT = 'Текст'
+
 
 class NotesTestBase(TestCase):
     @classmethod
@@ -26,7 +34,7 @@ class NotesTestBase(TestCase):
         cls.reader_client.force_login(cls.reader)
 
         cls.notes = []
-        for i in range(6):
+        for i in range(NOTES_COUNT):
             note = Note.objects.create(
                 title=f'Заметка {i}',
                 text='Текст',
@@ -39,5 +47,5 @@ class NotesTestBase(TestCase):
         cls.detail_url = reverse('notes:detail', args=(cls.note.slug,))
         cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
         cls.delete_url = reverse('notes:delete', args=(cls.note.slug,))
-        cls.list_url = reverse('notes:list')
-        cls.create_url = reverse('notes:add')
+        cls.list_url = LIST_URL
+        cls.create_url = ADD_URL
